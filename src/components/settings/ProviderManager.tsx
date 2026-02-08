@@ -45,6 +45,7 @@ export function ProviderManager() {
   const [providers, setProviders] = useState<ApiProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [envDetected, setEnvDetected] = useState<Record<string, string>>({});
 
   // Form dialog state
   const [formOpen, setFormOpen] = useState(false);
@@ -68,6 +69,7 @@ export function ProviderManager() {
       }
       const data = await res.json();
       setProviders(data.providers || []);
+      setEnvDetected(data.env_detected || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load providers");
     } finally {
@@ -222,6 +224,27 @@ export function ProviderManager() {
         </div>
       )}
 
+      {/* Environment variable detection banner */}
+      {!loading && Object.keys(envDetected).length > 0 && (
+        <div className="rounded-md border border-green-500/30 bg-green-500/5 p-3">
+          <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">
+            Environment variables detected
+          </p>
+          <div className="space-y-0.5">
+            {Object.entries(envDetected).map(([key, value]) => (
+              <p key={key} className="text-xs text-muted-foreground font-mono">
+                {key}={value}
+              </p>
+            ))}
+          </div>
+          {!providers.some(p => p.is_active === 1) && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              These will be used automatically when no provider is active.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
@@ -237,7 +260,9 @@ export function ProviderManager() {
           <div className="text-center">
             <p className="text-sm font-medium">No providers configured</p>
             <p className="text-xs mt-0.5">
-              Add a provider to use a custom API endpoint with Claude Code.
+              {Object.keys(envDetected).length > 0
+                ? "Using environment variables. Add a provider below to override."
+                : "Add a provider to use a custom API endpoint with Claude Code."}
             </p>
           </div>
           {/* Quick preset buttons */}
