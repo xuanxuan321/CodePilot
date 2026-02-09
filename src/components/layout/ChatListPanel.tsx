@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete02Icon, Search01Icon, Notification02Icon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, Search01Icon, Notification02Icon, FileImportIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { usePanel } from "@/hooks/usePanel";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { ImportSessionDialog } from "./ImportSessionDialog";
 import type { ChatSession } from "@/types";
 
 interface ChatListPanelProps {
@@ -76,6 +77,7 @@ export function ChatListPanel({ open }: ChatListPanelProps) {
   const [hoveredSession, setHoveredSession] = useState<string | null>(null);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -168,6 +170,26 @@ export function ChatListPanel({ open }: ChatListPanelProps) {
             className="h-8 pl-7 text-xs"
           />
         </div>
+      </div>
+
+      {/* Import CLI Session */}
+      <div className="px-3 pb-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <HugeiconsIcon icon={FileImportIcon} className="h-3 w-3" />
+              Import CLI Session
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            Import conversations from Claude Code CLI
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Chat sessions list */}
@@ -289,6 +311,12 @@ export function ChatListPanel({ open }: ChatListPanelProps) {
           v{process.env.NEXT_PUBLIC_APP_VERSION}
         </span>
       </div>
+
+      {/* Import CLI Session Dialog */}
+      <ImportSessionDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
     </aside>
   );
 }
