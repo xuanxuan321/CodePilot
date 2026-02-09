@@ -225,25 +225,49 @@ export function ProviderManager() {
       )}
 
       {/* Environment variable detection banner */}
-      {!loading && Object.keys(envDetected).length > 0 && (
-        <div className="rounded-md border border-green-500/30 bg-green-500/5 p-3">
-          <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">
-            Environment variables detected
-          </p>
-          <div className="space-y-0.5">
-            {Object.entries(envDetected).map(([key, value]) => (
-              <p key={key} className="text-xs text-muted-foreground font-mono">
-                {key}={value}
+      {!loading && Object.keys(envDetected).length > 0 && (() => {
+        const hasActiveProvider = providers.some(p => p.is_active === 1);
+        return (
+          <div className={`rounded-md border p-3 ${
+            hasActiveProvider
+              ? "border-border/50 bg-muted/30"
+              : "border-green-500/30 bg-green-500/5"
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <p className={`text-xs font-medium ${
+                hasActiveProvider
+                  ? "text-muted-foreground"
+                  : "text-green-700 dark:text-green-400"
+              }`}>
+                Environment variables detected
               </p>
-            ))}
+              {hasActiveProvider ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                  Overridden
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-green-600 dark:text-green-400 border-green-500/30">
+                  In use
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-0.5">
+              {Object.entries(envDetected).map(([key, value]) => (
+                <p key={key} className={`text-xs font-mono ${
+                  hasActiveProvider ? "text-muted-foreground/60 line-through" : "text-muted-foreground"
+                }`}>
+                  {key}={value}
+                </p>
+              ))}
+            </div>
+            {hasActiveProvider && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Active provider takes priority. Disable it to use environment variables.
+              </p>
+            )}
           </div>
-          {!providers.some(p => p.is_active === 1) && (
-            <p className="text-xs text-muted-foreground mt-1.5">
-              These will be used automatically when no provider is active.
-            </p>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Loading */}
       {loading && (
