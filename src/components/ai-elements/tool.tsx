@@ -18,18 +18,35 @@ import {
   WrenchIcon,
   XCircleIcon,
 } from "lucide-react";
-import { isValidElement } from "react";
+import { createContext, isValidElement, useContext, useState } from "react";
 
 import { CodeBlock } from "./code-block";
 
+// Context to track if tool content has been opened (for lazy rendering)
+const ToolOpenContext = createContext<boolean>(false);
+
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
-export const Tool = ({ className, ...props }: ToolProps) => (
-  <Collapsible
-    className={cn("group not-prose mb-4 w-full rounded-md border", className)}
-    {...props}
-  />
-);
+export const Tool = ({ className, defaultOpen = false, ...props }: ToolProps) => {
+  // Track if the tool has ever been opened (for lazy content rendering)
+  const [hasBeenOpened, setHasBeenOpened] = useState(defaultOpen);
+
+  return (
+    <ToolOpenContext.Provider value={hasBeenOpened}>
+      <Collapsible
+        className={cn("group not-prose mb-4 w-full rounded-md border", className)}
+        defaultOpen={defaultOpen}
+        onOpenChange={(open) => {
+          if (open && !hasBeenOpened) {
+            setHasBeenOpened(true);
+          }
+          props.onOpenChange?.(open);
+        }}
+        {...props}
+      />
+    </ToolOpenContext.Provider>
+  );
+};
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 
@@ -103,15 +120,22 @@ export const ToolHeader = ({
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 
-export const ToolContent = ({ className, ...props }: ToolContentProps) => (
-  <CollapsibleContent
-    className={cn(
-      "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 space-y-4 p-4 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
-      className
-    )}
-    {...props}
-  />
-);
+export const ToolContent = ({ className, children, ...props }: ToolContentProps) => {
+  // Only render children if the tool has been opened at least once
+  const hasBeenOpened = useContext(ToolOpenContext);
+
+  return (
+    <CollapsibleContent
+      className={cn(
+        "data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 space-y-4 p-4 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in",
+        className
+      )}
+      {...props}
+    >
+      {hasBeenOpened ? children : null}
+    </CollapsibleContent>
+  );
+};
 
 export type ToolInputProps = ComponentProps<"div"> & {
   input: ToolPart["input"];

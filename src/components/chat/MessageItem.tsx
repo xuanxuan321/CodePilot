@@ -33,8 +33,50 @@ interface ToolBlock {
 
 function parseToolBlocks(content: string): { text: string; tools: ToolBlock[] } {
   const tools: ToolBlock[] = [];
-  let text = content;
+  let text = '';
 
+  // Try to parse as JSON array (new format from chat API)
+  if (content.startsWith('[')) {
+    try {
+      const blocks = JSON.parse(content) as Array<{
+        type: string;
+        text?: string;
+        id?: string;
+        name?: string;
+        input?: unknown;
+        tool_use_id?: string;
+        content?: string;
+        is_error?: boolean;
+      }>;
+      
+      for (const block of blocks) {
+        if (block.type === 'text' && block.text) {
+          text += block.text;
+        } else if (block.type === 'tool_use') {
+          tools.push({
+            type: 'tool_use',
+            id: block.id,
+            name: block.name,
+            input: block.input,
+          });
+        } else if (block.type === 'tool_result') {
+          tools.push({
+            type: 'tool_result',
+            id: block.tool_use_id,
+            content: block.content,
+            is_error: block.is_error,
+          });
+        }
+      }
+      
+      return { text: text.trim(), tools };
+    } catch {
+      // Not valid JSON, fall through to legacy parsing
+    }
+  }
+
+  // Legacy format: HTML comments
+  text = content;
   const toolUseRegex = /<!--tool_use:([\s\S]*?)-->/g;
   let match;
   while ((match = toolUseRegex.exec(content)) !== null) {
