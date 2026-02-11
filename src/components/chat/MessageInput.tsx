@@ -256,6 +256,11 @@ function AttachFileButton() {
  */
 function FileTreeAttachmentBridge() {
   const attachments = usePromptInputAttachments();
+  const attachmentsRef = useRef(attachments);
+
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
 
   useEffect(() => {
     const handler = async (e: Event) => {
@@ -269,7 +274,7 @@ function FileTreeAttachmentBridge() {
         const blob = await res.blob();
         const filename = filePath.split('/').pop() || 'file';
         const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
-        attachments.add([file]);
+        attachmentsRef.current.add([file]);
       } catch {
         // Silently fail if file fetch fails
       }
@@ -277,7 +282,7 @@ function FileTreeAttachmentBridge() {
 
     window.addEventListener('attach-file-to-chat', handler);
     return () => window.removeEventListener('attach-file-to-chat', handler);
-  }, [attachments]);
+  }, []);
 
   return null;
 }
