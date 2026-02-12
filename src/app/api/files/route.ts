@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import os from 'os';
 import { scanDirectory, isPathSafe } from '@/lib/files';
 import type { FileTreeResponse, ErrorResponse } from '@/types';
 
@@ -14,8 +16,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const path = require('path');
-  const os = require('os');
   const resolvedDir = path.resolve(dir);
   const homeDir = os.homedir();
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tree = scanDirectory(resolvedDir, Math.min(depth, 5));
+    const tree = await scanDirectory(resolvedDir, Math.min(depth, 5));
     return NextResponse.json<FileTreeResponse>({ tree, root: resolvedDir });
   } catch (error) {
     return NextResponse.json<ErrorResponse>(

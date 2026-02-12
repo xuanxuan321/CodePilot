@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { isPathSafe } from '@/lib/files';
@@ -104,14 +104,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  if (!fs.existsSync(resolved)) {
+  try {
+    await fs.access(resolved);
+  } catch {
     return new Response(JSON.stringify({ error: 'File not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const stat = fs.statSync(resolved);
+  const stat = await fs.stat(resolved);
   if (!stat.isFile()) {
     return new Response(JSON.stringify({ error: 'Not a file' }), {
       status: 400,
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const buffer = fs.readFileSync(resolved);
+  const buffer = await fs.readFile(resolved);
   const ext = path.extname(resolved).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 

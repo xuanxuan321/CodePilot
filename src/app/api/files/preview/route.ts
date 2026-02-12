@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import os from 'os';
 import { readFilePreview, isPathSafe } from '@/lib/files';
 import type { FilePreviewResponse, ErrorResponse } from '@/types';
 
@@ -14,8 +16,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const path = require('path');
-  const os = require('os');
   const resolvedPath = path.resolve(filePath);
   const homeDir = os.homedir();
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const preview = readFilePreview(resolvedPath, Math.min(maxLines, 1000));
+    const preview = await readFilePreview(resolvedPath, Math.min(maxLines, 1000));
     return NextResponse.json<FilePreviewResponse>({ preview });
   } catch (error) {
     return NextResponse.json<ErrorResponse>(
