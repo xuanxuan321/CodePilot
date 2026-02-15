@@ -28,8 +28,8 @@ export default function NewChatPage() {
   const [toolResults, setToolResults] = useState<ToolResultInfo[]>([]);
   const [statusText, setStatusText] = useState<string | undefined>();
   const [workingDir, setWorkingDir] = useState('');
-  const [mode, setMode] = useState('code');
-  const [currentModel, setCurrentModel] = useState('sonnet');
+  const [mode, setMode] = useState('fullAccess');
+  const [currentModel, setCurrentModel] = useState('opus');
   const [pendingPermission, setPendingPermission] = useState<PermissionRequestEvent | null>(null);
   const [permissionResolved, setPermissionResolved] = useState<'allow' | 'deny' | null>(null);
   const [streamingToolOutput, setStreamingToolOutput] = useState('');

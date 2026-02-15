@@ -88,7 +88,7 @@ export default function ChatSessionPage({ params }: ChatSessionPageProps) {
           setSessionTitle(title);
           setPanelSessionTitle(title);
           setSessionModel(data.session.model || '');
-          setSessionMode(data.session.mode || 'code');
+          setSessionMode(data.session.mode || 'fullAccess');
           setProjectName(data.session.project_name || '');
         }
       } catch {

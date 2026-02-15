@@ -433,6 +433,7 @@ export interface ClaudeStreamOptions {
   mcpServers?: Record<string, MCPServerConfig>;
   abortController?: AbortController;
   permissionMode?: string;
+  forceSkipPermissions?: boolean;
   files?: FileAttachment[];
   toolTimeoutSeconds?: number;
 }

@@ -66,9 +66,9 @@ export function SettingsLayout() {
         </p>
       </div>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {/* Sidebar */}
-        <nav className="flex w-52 shrink-0 flex-col gap-1 border-r border-border/50 p-3">
+        <nav className="flex md:w-52 shrink-0 flex-row md:flex-col gap-1 border-b md:border-b-0 md:border-r border-border/50 p-3 overflow-x-auto">
           {sidebarItems.map((item) => (
             <button
               key={item.id}
@@ -87,7 +87,7 @@ export function SettingsLayout() {
         </nav>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {activeSection === "general" && <GeneralSection />}
           {activeSection === "providers" && <ProviderManager />}
           {activeSection === "cli" && <CliSettingsSection />}

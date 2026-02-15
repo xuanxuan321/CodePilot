@@ -57,11 +57,16 @@ export async function POST(request: NextRequest) {
     // Determine model: request override > session model > default setting
     const effectiveModel = model || session.model || getSetting('default_model') || undefined;
 
-    // Determine permission mode from chat mode: code → acceptEdits, plan → plan, ask → default (no tools)
-    const effectiveMode = mode || session.mode || 'code';
+    // Determine permission mode from chat mode: code → acceptEdits, fullAccess → bypassPermissions, plan → plan, ask → default (no tools)
+    const effectiveMode = mode || session.mode || 'fullAccess';
     let permissionMode: string;
     let systemPromptOverride: string | undefined;
+    let forceSkipPermissions = false;
     switch (effectiveMode) {
+      case 'fullAccess':
+        permissionMode = 'bypassPermissions';
+        forceSkipPermissions = true;
+        break;
       case 'plan':
         permissionMode = 'plan';
         break;
@@ -109,6 +114,7 @@ export async function POST(request: NextRequest) {
       workingDirectory: session.working_directory || undefined,
       abortController,
       permissionMode,
+      forceSkipPermissions,
       files: fileAttachments,
       toolTimeoutSeconds: toolTimeout || 120,
     });

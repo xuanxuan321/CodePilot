@@ -233,6 +233,7 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
     mcpServers,
     abortController,
     permissionMode,
+    forceSkipPermissions: forceSkipPerms,
     files,
     toolTimeoutSeconds = 0,
   } = options;
@@ -248,6 +249,10 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
         // Ensure HOME/USERPROFILE are set so Claude Code can find ~/.claude/commands/
         if (!sdkEnv.HOME) sdkEnv.HOME = os.homedir();
         if (!sdkEnv.USERPROFILE) sdkEnv.USERPROFILE = os.homedir();
+        // Remove Claude Code nesting guard so SDK subprocess can launch
+        // when CodePilot's dev server is run inside a Claude Code session
+        delete sdkEnv.CLAUDECODE;
+        delete sdkEnv.CLAUDE_CODE_ENTRYPOINT;
         // Ensure SDK subprocess has expanded PATH (consistent with Electron mode)
         sdkEnv.PATH = getExpandedPath();
 
@@ -312,8 +317,8 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
           }
         }
 
-        // Check if dangerously_skip_permissions is enabled in app settings
-        const skipPermissions = getSetting('dangerously_skip_permissions') === 'true';
+        // Check if dangerously_skip_permissions is enabled in app settings or per-request
+        const skipPermissions = forceSkipPerms || getSetting('dangerously_skip_permissions') === 'true';
 
         const queryOptions: Options = {
           cwd: workingDirectory || os.homedir(),

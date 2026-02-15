@@ -28,11 +28,14 @@ import { usePanel } from "@/hooks/usePanel";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { ImportSessionDialog } from "./ImportSessionDialog";
 import { FolderPicker } from "@/components/chat/FolderPicker";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { ChatSession } from "@/types";
 
 interface ChatListPanelProps {
   open: boolean;
   width?: number;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
 }
 
 function formatRelativeTime(dateStr: string): string {
@@ -109,14 +112,15 @@ function groupSessionsByProject(sessions: ChatSession[]): ProjectGroup[] {
 
 const MODE_BADGE_CONFIG = {
   code: { label: "Code", className: "bg-blue-500/10 text-blue-500" },
+  fullAccess: { label: "Full", className: "bg-orange-500/10 text-orange-500" },
   plan: { label: "Plan", className: "bg-sky-500/10 text-sky-500" },
   ask: { label: "Ask", className: "bg-green-500/10 text-green-500" },
 } as const;
 
-export function ChatListPanel({ open, width }: ChatListPanelProps) {
+export function ChatListPanel({ open, width, mobileOpen, onMobileOpenChange }: ChatListPanelProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { streamingSessionId, pendingApprovalSessionId } = usePanel();
+  const { streamingSessionId, pendingApprovalSessionId, isMobile } = usePanel();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [hoveredSession, setHoveredSession] = useState<string | null>(null);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
@@ -295,15 +299,10 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
     [filteredSessions]
   );
 
-  if (!open) return null;
-
-  return (
-    <aside
-      className="hidden h-full shrink-0 flex-col overflow-hidden bg-sidebar lg:flex"
-      style={{ width: width ?? 240 }}
-    >
+  const panelContent = (
+    <>
       {/* Header - extra top padding for macOS traffic lights */}
-      <div className="flex h-12 shrink-0 items-center justify-between px-3 mt-5 pl-6">
+      <div className={cn("flex h-12 shrink-0 items-center justify-between px-3 pl-6", !isMobile && "mt-5")}>
         <span className="text-[13px] font-semibold tracking-tight text-sidebar-foreground">
           Threads
         </span>
@@ -415,9 +414,9 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
                             size="icon-xs"
                             className={cn(
                               "h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground transition-opacity",
-                              isFolderHovered ? "opacity-100" : "opacity-0"
+                              isFolderHovered || isMobile ? "opacity-100" : "opacity-0"
                             )}
-                            tabIndex={isFolderHovered ? 0 : -1}
+                            tabIndex={isFolderHovered || isMobile ? 0 : -1}
                             onClick={(e) =>
                               handleCreateSessionInProject(
                                 e,
@@ -466,8 +465,9 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
                           >
                             <Link
                               href={`/chat/${session.id}`}
+                              onClick={() => isMobile && onMobileOpenChange?.(false)}
                               className={cn(
-                                "flex items-center gap-1.5 rounded-md pl-7 pr-2 py-1.5 transition-all duration-150 min-w-0",
+                                "flex items-center gap-1.5 rounded-md pl-7 pr-2 py-2.5 md:py-1.5 transition-all duration-150 min-w-0",
                                 isActive
                                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                                   : "text-sidebar-foreground hover:bg-accent/50"
@@ -509,13 +509,16 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
                                 </span>
                               </div>
                             </Link>
-                            {(isHovered || isDeleting) && (
+                            {(isHovered || isDeleting || isMobile) && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="icon-xs"
-                                    className="absolute right-1 top-1 bg-sidebar text-muted-foreground/60 hover:text-destructive"
+                                    className={cn(
+                                      "absolute right-1 top-1 bg-sidebar text-muted-foreground/60 hover:text-destructive",
+                                      isMobile ? "opacity-100" : ""
+                                    )}
                                     onClick={(e) =>
                                       handleDeleteSession(e, session.id)
                                     }
@@ -566,6 +569,30 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
         onOpenChange={setFolderPickerOpen}
         onSelect={handleFolderSelect}
       />
+    </>
+  );
+
+  // Mobile: render as Sheet overlay
+  if (isMobile) {
+    return (
+      <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+        <SheetContent side="left" className="w-[85vw] max-w-sm p-0 flex flex-col" showCloseButton={false}>
+          <SheetTitle className="sr-only">Threads</SheetTitle>
+          {panelContent}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: original aside rendering
+  if (!open) return null;
+
+  return (
+    <aside
+      className="hidden h-full shrink-0 flex-col overflow-hidden bg-sidebar lg:flex"
+      style={{ width: width ?? 240 }}
+    >
+      {panelContent}
     </aside>
   );
 }

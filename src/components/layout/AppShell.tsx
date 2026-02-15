@@ -35,6 +35,18 @@ const DISMISSED_VERSION_KEY = "codepilot_dismissed_update_version";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileChatListOpen, setMobileChatListOpen] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    mql.addEventListener('change', handler as (e: MediaQueryListEvent) => void);
+    return () => mql.removeEventListener('change', handler as (e: MediaQueryListEvent) => void);
+  }, []);
+
   const [chatListOpen, setChatListOpenRaw] = useState(false);
 
   // Panel width state with localStorage persistence
@@ -238,29 +250,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setPreviewFile,
       previewViewMode,
       setPreviewViewMode,
+      isMobile,
     }),
-    [panelOpen, setPanelOpen, panelContent, workingDirectory, sessionId, sessionTitle, streamingSessionId, pendingApprovalSessionId, previewFile, setPreviewFile, previewViewMode]
+    [panelOpen, setPanelOpen, panelContent, workingDirectory, sessionId, sessionTitle, streamingSessionId, pendingApprovalSessionId, previewFile, setPreviewFile, previewViewMode, isMobile]
   );
 
   return (
     <UpdateContext.Provider value={updateContextValue}>
       <PanelContext.Provider value={panelContextValue}>
         <TooltipProvider delayDuration={300}>
-          <div className="flex h-screen overflow-hidden">
+          <div className="flex h-dvh overflow-hidden pb-14 md:pb-0">
             <NavRail
               chatListOpen={chatListOpen}
               onToggleChatList={() => setChatListOpen(!chatListOpen)}
               hasUpdate={updateInfo?.updateAvailable ?? false}
               skipPermissionsActive={skipPermissionsActive}
+              isMobile={isMobile}
+              onToggleMobileChatList={() => setMobileChatListOpen(!mobileChatListOpen)}
             />
-            <ChatListPanel open={chatListOpen} width={chatListWidth} />
-            {chatListOpen && (
+            <ChatListPanel
+              open={chatListOpen}
+              width={chatListWidth}
+              mobileOpen={mobileChatListOpen}
+              onMobileOpenChange={setMobileChatListOpen}
+            />
+            {chatListOpen && !isMobile && (
               <ResizeHandle side="left" onResize={handleChatListResize} onResizeEnd={handleChatListResizeEnd} />
             )}
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               {/* Electron draggable title bar region */}
               <div
-                className="h-11 w-full shrink-0"
+                className="h-3 md:h-11 w-full shrink-0"
                 style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
               />
               <main className="relative flex-1 overflow-hidden">{children}</main>

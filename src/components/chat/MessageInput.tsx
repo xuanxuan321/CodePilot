@@ -20,6 +20,7 @@ import {
   SearchList01Icon,
   BrainIcon,
   GlobalIcon,
+  FlashIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from '@/lib/utils';
 import {
@@ -112,6 +113,7 @@ interface ModeOption {
 
 const MODE_OPTIONS: ModeOption[] = [
   { value: 'code', label: 'Code', icon: Wrench01Icon, description: 'Read, write files & run commands' },
+  { value: 'fullAccess', label: 'Full Access', icon: FlashIcon, description: 'Auto-approve all actions' },
   { value: 'plan', label: 'Plan', icon: ClipboardIcon, description: 'Analyze & plan without executing' },
   { value: 'ask', label: 'Ask', icon: HelpCircleIcon, description: 'Answer questions only' },
 ];
@@ -733,7 +735,7 @@ export function MessageInput({
     item.label.toLowerCase().includes(popoverFilter.toLowerCase())
   );
 
-  const currentModelValue = modelName || 'sonnet';
+  const currentModelValue = modelName || 'opus';
   const currentModelOption = MODEL_OPTIONS.find((m) => m.value === currentModelValue) || MODEL_OPTIONS[0];
   const currentMode = MODE_OPTIONS.find((m) => m.value === mode) || MODE_OPTIONS[0];
 
@@ -741,7 +743,7 @@ export function MessageInput({
   const chatStatus: ChatStatus = isStreaming ? 'streaming' : 'ready';
 
   return (
-    <div className="bg-background/80 backdrop-blur-lg px-4 py-3">
+    <div className="bg-background/80 backdrop-blur-lg px-2 py-2 md:px-4 md:py-3">
       <div className="mx-auto">
         <div className="relative">
           {/* Popover */}
@@ -923,7 +925,7 @@ export function MessageInput({
 
                   {/* Mode dropdown */}
                   {modeMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-1.5 w-56 rounded-lg border bg-popover shadow-lg overflow-hidden z-50">
+                    <div className="absolute bottom-full left-0 mb-1.5 w-56 max-w-[calc(100vw-2rem)] rounded-lg border bg-popover shadow-lg overflow-hidden z-50">
                       <div className="py-1">
                         {MODE_OPTIONS.map((opt) => {
                           const isActive = opt.value === mode;

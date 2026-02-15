@@ -234,7 +234,7 @@ export function createSession(
 
   db.prepare(
     'INSERT INTO chat_sessions (id, title, created_at, updated_at, model, system_prompt, working_directory, sdk_session_id, project_name, status, mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, title || 'New Chat', now, now, model || '', systemPrompt || '', wd, '', projectName, 'active', mode || 'code');
+  ).run(id, title || 'New Chat', now, now, model || 'opus', systemPrompt || '', wd, '', projectName, 'active', mode || 'fullAccess');
 
   return getSession(id)!;
 }

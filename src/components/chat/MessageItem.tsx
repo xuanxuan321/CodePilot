@@ -306,7 +306,7 @@ export function MessageItem({ message }: MessageItemProps) {
       </MessageContent>
 
       {/* Footer with copy, timestamp and token usage */}
-      <div className={`flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isUser ? 'justify-end' : ''}`}>
+      <div className={`flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 ${isUser ? 'justify-end' : ''}`}>
         {!isUser && <span className="text-xs text-muted-foreground/50">{timestamp}</span>}
         {!isUser && tokenUsage && <TokenUsageDisplay usage={tokenUsage} />}
         {displayText && <CopyButton text={displayText} />}

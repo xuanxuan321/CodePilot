@@ -25,6 +25,7 @@ export interface PanelContextValue {
   setPreviewFile: (path: string | null) => void;
   previewViewMode: PreviewViewMode;
   setPreviewViewMode: (mode: PreviewViewMode) => void;
+  isMobile: boolean;
 }
 
 export const PanelContext = createContext<PanelContextValue | null>(null);

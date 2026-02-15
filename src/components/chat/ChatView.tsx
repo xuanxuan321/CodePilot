@@ -37,8 +37,8 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
   const [toolUses, setToolUses] = useState<ToolUseInfo[]>([]);
   const [toolResults, setToolResults] = useState<ToolResultInfo[]>([]);
   const [statusText, setStatusText] = useState<string | undefined>();
-  const [mode, setMode] = useState(initialMode || 'code');
-  const [currentModel, setCurrentModel] = useState(modelName || 'sonnet');
+  const [mode, setMode] = useState(initialMode || 'fullAccess');
+  const [currentModel, setCurrentModel] = useState(modelName || 'opus');
   const [pendingPermission, setPendingPermission] = useState<PermissionRequestEvent | null>(null);
   const [permissionResolved, setPermissionResolved] = useState<'allow' | 'deny' | null>(null);
   const [streamingToolOutput, setStreamingToolOutput] = useState('');
