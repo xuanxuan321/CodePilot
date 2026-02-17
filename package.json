@@ -9,11 +9,11 @@
   "description": "A native desktop GUI client for Claude Code",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3100",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "electron:dev": "concurrently -k \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:dev": "concurrently -k \"next dev -p 3100\" \"wait-on http://localhost:3100 && electron .\"",
     "electron:build": "next build && node scripts/build-electron.mjs",
     "electron:pack": "npm run electron:build && electron-builder --config electron-builder.yml",
     "electron:pack:mac": "npm run electron:build && electron-builder --mac --config electron-builder.yml",
