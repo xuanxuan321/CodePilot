@@ -8,6 +8,7 @@ import {
   Delete02Icon,
   Search01Icon,
   Notification02Icon,
+  CheckmarkCircle02Icon,
   FileImportIcon,
   Folder01Icon,
   ArrowDown01Icon,
@@ -120,7 +121,7 @@ const MODE_BADGE_CONFIG = {
 export function ChatListPanel({ open, width, mobileOpen, onMobileOpenChange }: ChatListPanelProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { streamingSessionId, pendingApprovalSessionId, isMobile } = usePanel();
+  const { streamingSessionId, pendingApprovalSessionId, completedSessionIds, isMobile } = usePanel();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [hoveredSession, setHoveredSession] = useState<string | null>(null);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
@@ -451,6 +452,8 @@ export function ChatListPanel({ open, width, mobileOpen, onMobileOpenChange }: C
                           streamingSessionId === session.id;
                         const needsApproval =
                           pendingApprovalSessionId === session.id;
+                        const isCompleted =
+                          completedSessionIds.has(session.id);
                         const mode = session.mode || "code";
                         const badgeCfg = MODE_BADGE_CONFIG[mode];
 
@@ -486,6 +489,15 @@ export function ChatListPanel({ open, width, mobileOpen, onMobileOpenChange }: C
                                   <HugeiconsIcon
                                     icon={Notification02Icon}
                                     className="h-2.5 w-2.5 text-amber-500"
+                                  />
+                                </span>
+                              )}
+                              {/* Completed (unread) indicator */}
+                              {!isSessionStreaming && !needsApproval && isCompleted && (
+                                <span className="flex h-3 w-3 shrink-0 items-center justify-center">
+                                  <HugeiconsIcon
+                                    icon={CheckmarkCircle02Icon}
+                                    className="h-2.5 w-2.5 text-green-500"
                                   />
                                 </span>
                               )}

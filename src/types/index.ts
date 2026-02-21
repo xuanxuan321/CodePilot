@@ -345,6 +345,7 @@ export interface PermissionResponseRequest {
   decision: {
     behavior: 'allow';
     updatedPermissions?: PermissionSuggestion[];
+    updatedInput?: Record<string, unknown>;
   } | {
     behavior: 'deny';
     message?: string;

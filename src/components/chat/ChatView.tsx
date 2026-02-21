@@ -27,7 +27,9 @@ interface ChatViewProps {
 }
 
 export function ChatView({ sessionId, initialMessages = [], initialHasMore = false, modelName, initialMode }: ChatViewProps) {
-  const { setStreamingSessionId, workingDirectory, setWorkingDirectory, setPanelOpen, setPendingApprovalSessionId } = usePanel();
+  const { setStreamingSessionId, workingDirectory, setWorkingDirectory, setPanelOpen, setPendingApprovalSessionId, pendingApprovalSessionId, pendingApprovalData, setPendingApprovalData, addCompletedSession } = usePanel();
+  const isMountedRef = useRef(true);
+
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -80,6 +82,12 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
     };
   }, []);
 
+  // Track whether this ChatView is still mounted (user is viewing this session)
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const initializedRef = useRef(false);
   useEffect(() => {
     if (initialMessages.length > 0 && !initializedRef.current) {
@@ -94,6 +102,15 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
       setMode(initialMode);
     }
   }, [initialMode]);
+
+  // Restore pending permission from global context when re-mounting this session
+  useEffect(() => {
+    if (pendingApprovalSessionId === sessionId && pendingApprovalData) {
+      setPendingPermission(pendingApprovalData);
+      setIsStreaming(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   // Sync hasMore when initial data loads
   useEffect(() => {
@@ -128,10 +145,10 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
     abortControllerRef.current = null;
   }, []);
 
-  const handlePermissionResponse = useCallback(async (decision: 'allow' | 'allow_session' | 'deny') => {
+  const handlePermissionResponse = useCallback(async (decision: 'allow' | 'allow_session' | 'deny', updatedInput?: Record<string, unknown>) => {
     if (!pendingPermission) return;
 
-    const body: { permissionRequestId: string; decision: { behavior: 'allow'; updatedPermissions?: unknown[] } | { behavior: 'deny'; message?: string } } = {
+    const body: { permissionRequestId: string; decision: { behavior: 'allow'; updatedPermissions?: unknown[]; updatedInput?: Record<string, unknown> } | { behavior: 'deny'; message?: string } } = {
       permissionRequestId: pendingPermission.permissionRequestId,
       decision: decision === 'deny'
         ? { behavior: 'deny', message: 'User denied permission' }
@@ -140,11 +157,13 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
             ...(decision === 'allow_session' && pendingPermission.suggestions
               ? { updatedPermissions: pendingPermission.suggestions }
               : {}),
+            ...(updatedInput ? { updatedInput } : {}),
           },
     };
 
     setPermissionResolved(decision === 'deny' ? 'deny' : 'allow');
     setPendingApprovalSessionId('');
+    setPendingApprovalData(null);
 
     try {
       await fetch('/api/chat/permission', {
@@ -161,7 +180,7 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
       setPendingPermission(null);
       setPermissionResolved(null);
     }, 1000);
-  }, [pendingPermission, setPendingApprovalSessionId]);
+  }, [pendingPermission, setPendingApprovalSessionId, setPendingApprovalData]);
 
   const sendMessage = useCallback(
     async (content: string, files?: FileAttachment[]) => {
@@ -258,6 +277,7 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
             setPendingPermission(permData);
             setPermissionResolved(null);
             setPendingApprovalSessionId(sessionId);
+            setPendingApprovalData(permData);
           },
           onToolTimeout: (toolName, elapsedSeconds) => {
             toolTimeoutRef.current = { toolName, elapsedSeconds };
@@ -312,6 +332,7 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
             setPendingPermission(null);
             setPermissionResolved(null);
             setPendingApprovalSessionId('');
+            setPendingApprovalData(null);
             abortControllerRef.current = null;
             // Auto-retry: send a follow-up message telling the model to adjust strategy
             setTimeout(() => {
@@ -346,6 +367,10 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
           setMessages((prev) => [...prev, errorMessage]);
         }
       } finally {
+        // If user has navigated away from this session, mark it as completed
+        if (!isMountedRef.current) {
+          addCompletedSession(sessionId);
+        }
         toolTimeoutRef.current = null;
         setIsStreaming(false);
         setStreamingSessionId('');
@@ -358,12 +383,13 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
         setPendingPermission(null);
         setPermissionResolved(null);
         setPendingApprovalSessionId('');
+        setPendingApprovalData(null);
         abortControllerRef.current = null;
         // Notify file tree to refresh after AI finishes
         window.dispatchEvent(new CustomEvent('refresh-file-tree'));
       }
     },
-    [sessionId, isStreaming, setStreamingSessionId, setPendingApprovalSessionId, mode, currentModel]
+    [sessionId, isStreaming, setStreamingSessionId, setPendingApprovalSessionId, setPendingApprovalData, mode, currentModel, addCompletedSession]
   );
 
   // Keep sendMessageRef in sync so timeout auto-retry can call it

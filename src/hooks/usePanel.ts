@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { PermissionRequestEvent } from "@/types";
 
 export type PanelContent = "files" | "tasks";
 
@@ -21,11 +22,16 @@ export interface PanelContextValue {
   setStreamingSessionId: (id: string) => void;
   pendingApprovalSessionId: string;
   setPendingApprovalSessionId: (id: string) => void;
+  pendingApprovalData: PermissionRequestEvent | null;
+  setPendingApprovalData: (data: PermissionRequestEvent | null) => void;
   previewFile: string | null;
   setPreviewFile: (path: string | null) => void;
   previewViewMode: PreviewViewMode;
   setPreviewViewMode: (mode: PreviewViewMode) => void;
   isMobile: boolean;
+  completedSessionIds: Set<string>;
+  addCompletedSession: (id: string) => void;
+  removeCompletedSession: (id: string) => void;
 }
 
 export const PanelContext = createContext<PanelContextValue | null>(null);

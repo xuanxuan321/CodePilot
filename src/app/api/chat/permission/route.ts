@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       result = {
         behavior: 'allow',
         updatedPermissions: decision.updatedPermissions as unknown as PermissionUpdate[],
+        updatedInput: decision.updatedInput,
       };
     } else {
       result = {

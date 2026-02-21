@@ -328,6 +328,9 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
             ? 'bypassPermissions'
             : ((permissionMode as Options['permissionMode']) || 'acceptEdits'),
           env: sanitizeEnv(sdkEnv),
+          extraArgs: {
+            'chrome': null, // Enable built-in claude-in-chrome MCP
+          },
         };
 
         if (skipPermissions) {

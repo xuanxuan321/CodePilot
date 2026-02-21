@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Message as AIMessage,
   MessageContent,
@@ -40,7 +40,7 @@ interface StreamingMessageProps {
   streamingToolOutput?: string;
   statusText?: string;
   pendingPermission?: PermissionRequestEvent | null;
-  onPermissionResponse?: (decision: 'allow' | 'allow_session' | 'deny') => void;
+  onPermissionResponse?: (decision: 'allow' | 'allow_session' | 'deny', updatedInput?: Record<string, unknown>) => void;
   permissionResolved?: 'allow' | 'deny' | null;
   onForceStop?: () => void;
 }
@@ -100,6 +100,131 @@ function StreamingStatusBar({ statusText, onForceStop }: { statusText?: string; 
           Force stop
         </button>
       )}
+    </div>
+  );
+}
+
+interface AskQuestion {
+  question: string;
+  header?: string;
+  options: Array<{ label: string; description?: string }>;
+  multiSelect?: boolean;
+}
+
+function AskUserQuestionCard({
+  toolInput,
+  onAnswer,
+  onSkip,
+  resolved,
+}: {
+  toolInput: Record<string, unknown>;
+  onAnswer: (answers: Record<string, string>) => void;
+  onSkip: () => void;
+  resolved: 'allow' | 'deny' | null;
+}) {
+  const questions = (toolInput.questions ?? []) as AskQuestion[];
+  const [customInputIdx, setCustomInputIdx] = useState<number | null>(null);
+  const [customText, setCustomText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (customInputIdx !== null && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [customInputIdx]);
+
+  const handleSelect = useCallback((questionText: string, label: string) => {
+    onAnswer({ [questionText]: label });
+  }, [onAnswer]);
+
+  const handleCustomSubmit = useCallback((questionText: string) => {
+    if (customText.trim()) {
+      onAnswer({ [questionText]: customText.trim() });
+    }
+  }, [customText, onAnswer]);
+
+  if (resolved) {
+    return (
+      <div className="rounded-lg border border-border/50 bg-card/50 p-4">
+        <p className={`text-xs ${resolved === 'allow' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          {resolved === 'allow' ? 'Answered' : 'Skipped'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {questions.map((q, qIdx) => (
+        <div key={qIdx} className="rounded-lg border border-border/50 bg-card/50 p-4 space-y-3">
+          <p className="text-sm font-medium">{q.question}</p>
+          <div className="space-y-2">
+            {q.options.map((opt, optIdx) => (
+              <button
+                key={optIdx}
+                type="button"
+                onClick={() => handleSelect(q.question, opt.label)}
+                className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background px-4 py-3 text-left transition-colors hover:bg-accent hover:border-accent-foreground/20"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{opt.label}</div>
+                  {opt.description && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
+                  )}
+                </div>
+                <span className="ml-3 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted text-xs font-medium">
+                  {optIdx + 1}
+                </span>
+              </button>
+            ))}
+            {/* "Type something else..." option */}
+            {customInputIdx === qIdx ? (
+              <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-4 py-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCustomSubmit(q.question);
+                    if (e.key === 'Escape') { setCustomInputIdx(null); setCustomText(''); }
+                  }}
+                  placeholder="Type your answer..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCustomSubmit(q.question)}
+                  disabled={!customText.trim()}
+                  className="rounded px-2 py-1 text-xs font-medium text-primary hover:bg-accent disabled:opacity-40"
+                >
+                  Submit
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setCustomInputIdx(qIdx); setCustomText(''); }}
+                className="flex w-full items-center justify-between rounded-md border border-dashed border-border/60 bg-background px-4 py-3 text-left transition-colors hover:bg-accent hover:border-accent-foreground/20"
+              >
+                <span className="text-sm text-muted-foreground">Type something else...</span>
+                <span className="ml-3 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted text-xs font-medium">
+                  {q.options.length + 1}
+                </span>
+              </button>
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="rounded-md border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -185,8 +310,21 @@ export function StreamingMessage({
           />
         )}
 
-        {/* Permission approval confirmation */}
-        {(pendingPermission || permissionResolved) && (
+        {/* AskUserQuestion — interactive question card */}
+        {(pendingPermission || permissionResolved) && pendingPermission?.toolName === 'AskUserQuestion' && (
+          <AskUserQuestionCard
+            toolInput={pendingPermission.toolInput}
+            onAnswer={(answers) => {
+              const updatedInput = { ...pendingPermission.toolInput, answers };
+              onPermissionResponse?.('allow', updatedInput);
+            }}
+            onSkip={() => onPermissionResponse?.('deny')}
+            resolved={permissionResolved ?? null}
+          />
+        )}
+
+        {/* Permission approval confirmation (non-AskUserQuestion tools) */}
+        {(pendingPermission || permissionResolved) && pendingPermission?.toolName !== 'AskUserQuestion' && (
           <Confirmation
             approval={getApproval()}
             state={getConfirmationState()}

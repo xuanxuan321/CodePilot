@@ -33,7 +33,7 @@ interface MessageListProps {
   streamingToolOutput?: string;
   statusText?: string;
   pendingPermission?: PermissionRequestEvent | null;
-  onPermissionResponse?: (decision: 'allow' | 'allow_session' | 'deny') => void;
+  onPermissionResponse?: (decision: 'allow' | 'allow_session' | 'deny', updatedInput?: Record<string, unknown>) => void;
   permissionResolved?: 'allow' | 'deny' | null;
   onForceStop?: () => void;
   hasMore?: boolean;
@@ -113,7 +113,7 @@ export function MessageList({
           </div>
         ))}
 
-        {isStreaming && (
+        {(isStreaming || pendingPermission) && (
           <StreamingMessage
             content={streamingContent}
             isStreaming={isStreaming}

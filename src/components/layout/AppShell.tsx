@@ -10,6 +10,7 @@ import { ResizeHandle } from "./ResizeHandle";
 import { UpdateDialog } from "./UpdateDialog";
 import { DocPreview } from "./DocPreview";
 import { PanelContext, type PanelContent, type PreviewViewMode } from "@/hooks/usePanel";
+import type { PermissionRequestEvent } from "@/types";
 import { UpdateContext, type UpdateInfo } from "@/hooks/useUpdate";
 
 const CHATLIST_MIN = 180;
@@ -100,6 +101,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sessionTitle, setSessionTitle] = useState("");
   const [streamingSessionId, setStreamingSessionId] = useState("");
   const [pendingApprovalSessionId, setPendingApprovalSessionId] = useState("");
+  const [pendingApprovalData, setPendingApprovalData] = useState<PermissionRequestEvent | null>(null);
+  const [completedSessionIds, setCompletedSessionIds] = useState<Set<string>>(new Set());
+
+  const addCompletedSession = useCallback((id: string) => {
+    setCompletedSessionIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const removeCompletedSession = useCallback((id: string) => {
+    setCompletedSessionIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  // Auto-remove completed mark when user navigates to that session
+  useEffect(() => {
+    const match = pathname.match(/^\/chat\/(.+)$/);
+    if (match) {
+      removeCompletedSession(match[1]);
+    }
+  }, [pathname, removeCompletedSession]);
 
   // --- Doc Preview state ---
   const [previewFile, setPreviewFileRaw] = useState<string | null>(null);
@@ -246,13 +274,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setStreamingSessionId,
       pendingApprovalSessionId,
       setPendingApprovalSessionId,
+      pendingApprovalData,
+      setPendingApprovalData,
       previewFile,
       setPreviewFile,
       previewViewMode,
       setPreviewViewMode,
       isMobile,
+      completedSessionIds,
+      addCompletedSession,
+      removeCompletedSession,
     }),
-    [panelOpen, setPanelOpen, panelContent, workingDirectory, sessionId, sessionTitle, streamingSessionId, pendingApprovalSessionId, previewFile, setPreviewFile, previewViewMode, isMobile]
+    [panelOpen, setPanelOpen, panelContent, workingDirectory, sessionId, sessionTitle, streamingSessionId, pendingApprovalSessionId, pendingApprovalData, previewFile, setPreviewFile, previewViewMode, isMobile, completedSessionIds, addCompletedSession, removeCompletedSession]
   );
 
   return (
