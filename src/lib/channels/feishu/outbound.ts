@@ -179,18 +179,21 @@ async function sendAsInteractiveCard(
     const firstCallback = inlineButtons[0]?.[0]?.callbackData || '';
     const isPermission = firstCallback.startsWith('perm:');
     const isCwd = firstCallback.startsWith('cwd:');
+    const isAskQuestion = firstCallback.startsWith('ask:');
 
     // Build button elements
     const allButtons = inlineButtons.flat();
     const buttonColumns = allButtons.map((btn) => {
       let btnType: 'primary' | 'danger' | 'default' = 'default';
-      const lowerText = btn.text.toLowerCase();
-      if (lowerText.includes('deny') || lowerText.includes('拒绝')) {
-        btnType = 'danger';
-      } else if (lowerText.includes('allow') || lowerText.includes('允许')) {
-        btnType = 'primary';
-      } else if (btn.text.startsWith('📍')) {
-        btnType = 'primary'; // Current project highlighted
+      if (!isAskQuestion) {
+        const lowerText = btn.text.toLowerCase();
+        if (lowerText.includes('deny') || lowerText.includes('拒绝')) {
+          btnType = 'danger';
+        } else if (lowerText.includes('allow') || lowerText.includes('允许')) {
+          btnType = 'primary';
+        } else if (btn.text.startsWith('📍')) {
+          btnType = 'primary'; // Current project highlighted
+        }
       }
 
       return {
@@ -210,11 +213,13 @@ async function sendAsInteractiveCard(
     });
 
     // Card header based on type
-    const headerConfig = isPermission
-      ? { title: 'Permission Required', template: 'blue' as const, icon: 'lock-chat_filled' }
-      : isCwd
-        ? { title: 'Switch Project', template: 'turquoise' as const, icon: 'folder_outlined' }
-        : { title: 'Action Required', template: 'blue' as const, icon: 'info-circle_outlined' };
+    const headerConfig = isAskQuestion
+      ? { title: 'Question', template: 'indigo' as const, icon: 'info-circle_outlined' }
+      : isPermission
+        ? { title: 'Permission Required', template: 'blue' as const, icon: 'lock-chat_filled' }
+        : isCwd
+          ? { title: 'Switch Project', template: 'turquoise' as const, icon: 'folder_outlined' }
+          : { title: 'Action Required', template: 'blue' as const, icon: 'info-circle_outlined' };
 
     // Build body elements
     const bodyElements: any[] = [
@@ -244,6 +249,14 @@ async function sendAsInteractiveCard(
           columns: [col],
         });
       }
+    } else if (isAskQuestion) {
+      // AskUserQuestion: use flow layout so option buttons wrap horizontally
+      bodyElements.push({
+        tag: 'column_set' as const,
+        flex_mode: 'flow' as const,
+        horizontal_align: 'left' as const,
+        columns: buttonColumns,
+      });
     } else {
       bodyElements.push({
         tag: 'column_set' as const,

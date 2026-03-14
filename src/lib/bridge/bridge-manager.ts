@@ -487,7 +487,9 @@ async function handleMessage(
 
     // Permission buttons
     const handled = broker.handlePermissionCallback(msg.callbackData, msg.address.chatId, msg.callbackMessageId);
-    if (handled) {
+    if (handled && !msg.callbackData.startsWith('ask:')) {
+      // Send confirmation for permission callbacks, but not for AskUserQuestion
+      // (AskUserQuestion selections are self-explanatory — no need for extra confirmation)
       const confirmMsg: OutboundMessage = {
         address: msg.address,
         text: 'Permission response recorded.',
