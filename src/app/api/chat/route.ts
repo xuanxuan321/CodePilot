@@ -330,6 +330,14 @@ Start by greeting the user and asking the first question.
       // CLI tools context injection failed — don't block chat
     }
 
+    // Inject widget (generative UI) system prompt — always enabled
+    try {
+      const { WIDGET_SYSTEM_PROMPT } = await import('@/lib/widget-guidelines');
+      finalSystemPrompt = (finalSystemPrompt || '') + '\n\n' + WIDGET_SYSTEM_PROMPT;
+    } catch {
+      // Widget prompt injection failed — don't block chat
+    }
+
     // Load recent conversation history from DB as fallback context.
     // This is used when SDK session resume is unavailable or fails,
     // so the model still has conversation context.

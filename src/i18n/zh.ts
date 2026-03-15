@@ -48,6 +48,9 @@ const zh: Record<TranslationKey, string> = {
 
   // ── Streaming message ───────────────────────────────────────
   'streaming.thinking': '思考中...',
+  'streaming.thinkingDeep': '深度思考中...',
+  'streaming.preparing': '组织回复中...',
+  'streaming.generating': '生成中',
   'streaming.allowForSession': '本次会话允许',
   'streaming.allowed': '已允许',
   'streaming.denied': '已拒绝',
@@ -1099,6 +1102,14 @@ const zh: Record<TranslationKey, string> = {
   'error.retry': '重试',
   'error.selectDirectory': '选择目录',
   'error.openSetup': '打开设置',
+
+  // ── Widget (Generative UI) ────────────────────────────────
+  'widget.loading': '渲染组件中...',
+  'widget.streaming': '正在渲染可视化',
+  'widget.addingInteractivity': '正在为可视化添加交互动画...',
+  'widget.error': '组件渲染错误',
+  'widget.showCode': '显示代码',
+  'widget.hideCode': '隐藏代码',
 };
 
 export default zh;

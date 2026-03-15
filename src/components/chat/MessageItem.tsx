@@ -14,6 +14,7 @@ import { FileAttachmentDisplay } from './FileAttachmentDisplay';
 import { ImageGenConfirmation } from './ImageGenConfirmation';
 import { ImageGenCard } from './ImageGenCard';
 import { BatchPlanInlinePreview } from './batch-image-gen/BatchPlanInlinePreview';
+import { WidgetRenderer } from './WidgetRenderer';
 import { buildReferenceImages } from '@/lib/image-ref-store';
 import { parseDBDate } from '@/lib/utils';
 import type { PlannerOutput } from '@/types';
@@ -120,6 +121,148 @@ function parseBatchPlan(text: string): { beforeText: string; plan: PlannerOutput
       },
       afterText,
     };
+  } catch {
+    return null;
+  }
+}
+
+interface ShowWidgetData {
+  title?: string;
+  widget_code: string;
+}
+
+export function parseShowWidget(text: string): { beforeText: string; widget: ShowWidgetData; afterText: string } | null {
+  const segments = parseAllShowWidgets(text);
+  if (segments.length === 0) return null;
+  // Legacy compat: return first widget match
+  let beforeText = '';
+  let widget: ShowWidgetData | null = null;
+  const afterParts: string[] = [];
+  let foundWidget = false;
+  for (const seg of segments) {
+    if (!foundWidget) {
+      if (seg.type === 'text') { beforeText = seg.content; }
+      else { widget = seg.data; foundWidget = true; }
+    } else {
+      if (seg.type === 'text') afterParts.push(seg.content);
+      else afterParts.push(''); // subsequent widgets handled by parseAllShowWidgets
+    }
+  }
+  if (!widget) return null;
+  return { beforeText, widget, afterText: afterParts.join('\n') };
+}
+
+export type WidgetSegment =
+  | { type: 'text'; content: string }
+  | { type: 'widget'; data: ShowWidgetData };
+
+/** Parse ALL show-widget fences in text, returning alternating text/widget segments. */
+export function parseAllShowWidgets(text: string): WidgetSegment[] {
+  const segments: WidgetSegment[] = [];
+  const fenceRegex = /```show-widget\s*\n?([\s\S]*?)\n?\s*```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let foundAny = false;
+
+  while ((match = fenceRegex.exec(text)) !== null) {
+    foundAny = true;
+    // Text before this fence
+    const before = text.slice(lastIndex, match.index).trim();
+    if (before) segments.push({ type: 'text', content: before });
+
+    // Parse widget JSON
+    try {
+      const json = JSON.parse(match[1]);
+      if (json.widget_code) {
+        segments.push({ type: 'widget', data: { title: json.title || undefined, widget_code: String(json.widget_code) } });
+      }
+    } catch { /* skip malformed widget */ }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (!foundAny) {
+    // Fallback: handle truncated output (last fence not closed)
+    const fenceStart = text.indexOf('```show-widget');
+    if (fenceStart === -1) return [];
+
+    const before = text.slice(0, fenceStart).trim();
+    if (before) segments.push({ type: 'text', content: before });
+
+    const fenceBody = text.slice(fenceStart + '```show-widget'.length).trim();
+    const widget = extractTruncatedWidget(fenceBody);
+    if (widget) segments.push({ type: 'widget', data: widget });
+    return segments;
+  }
+
+  // Remaining text after last fence
+  const remaining = text.slice(lastIndex).trim();
+  if (remaining) {
+    // Check if remaining text has a truncated widget fence
+    const truncFenceStart = remaining.indexOf('```show-widget');
+    if (truncFenceStart !== -1) {
+      const beforeTrunc = remaining.slice(0, truncFenceStart).trim();
+      if (beforeTrunc) segments.push({ type: 'text', content: beforeTrunc });
+      const truncBody = remaining.slice(truncFenceStart + '```show-widget'.length).trim();
+      const widget = extractTruncatedWidget(truncBody);
+      if (widget) segments.push({ type: 'widget', data: widget });
+    } else {
+      segments.push({ type: 'text', content: remaining });
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * Compute the React key for a partial (still-streaming) widget so that it
+ * matches the key it will receive once its fence closes and the full content
+ * is parsed by parseAllShowWidgets → `.map((seg, i) => key={`w-${i}`})`.
+ *
+ * If these keys ever diverge, React will unmount + remount the WidgetRenderer
+ * → iframe destroyed → height collapse → scroll jump (P2 regression).
+ */
+export function computePartialWidgetKey(content: string): string {
+  const lastFenceStart = content.lastIndexOf('```show-widget');
+  const beforePart = content.slice(0, lastFenceStart).trim();
+  const hasCompletedFences = beforePart.length > 0 && /```show-widget/.test(beforePart);
+  const completedSegments = hasCompletedFences ? parseAllShowWidgets(beforePart) : [];
+  return `w-${hasCompletedFences ? completedSegments.length : (beforePart ? 1 : 0)}`;
+}
+
+/** Extract widget_code from truncated/incomplete JSON (no closing fence). */
+function extractTruncatedWidget(fenceBody: string): ShowWidgetData | null {
+  // Try full JSON parse first
+  try {
+    const json = JSON.parse(fenceBody);
+    if (json.widget_code) return { title: json.title || undefined, widget_code: String(json.widget_code) };
+  } catch { /* expected — JSON is truncated */ }
+
+  // String-search extraction
+  const keyIdx = fenceBody.indexOf('"widget_code"');
+  if (keyIdx === -1) return null;
+  const colonIdx = fenceBody.indexOf(':', keyIdx + 13);
+  if (colonIdx === -1) return null;
+  const quoteIdx = fenceBody.indexOf('"', colonIdx + 1);
+  if (quoteIdx === -1) return null;
+
+  let raw = fenceBody.slice(quoteIdx + 1);
+  raw = raw.replace(/"\s*\}\s*$/, '');
+  if (raw.endsWith('\\')) raw = raw.slice(0, -1);
+  try {
+    const widgetCode = raw
+      .replace(/\\\\/g, '\x00BACKSLASH\x00')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\r/g, '\r')
+      .replace(/\\"/g, '"')
+      .replace(/\x00BACKSLASH\x00/g, '\\');
+    if (widgetCode.length < 10) return null;
+
+    let title: string | undefined;
+    const titleMatch = fenceBody.match(/"title"\s*:\s*"([^"]*?)"/);
+    if (titleMatch) title = titleMatch[1];
+    return { title, widget_code: widgetCode };
   } catch {
     return null;
   }
@@ -449,7 +592,21 @@ export const MessageItem = memo(function MessageItem({ message, sessionId }: Mes
  */
 const AssistantContent = memo(function AssistantContent({ displayText, messageId, sessionId }: { displayText: string; messageId: string; sessionId?: string }) {
   return useMemo(() => {
-    // Try batch-plan first (Image Agent batch mode)
+    // Try show-widget first (Generative UI) — supports multiple widgets interleaved with text
+    const widgetSegments = parseAllShowWidgets(displayText);
+    if (widgetSegments.length > 0) {
+      return (
+        <>
+          {widgetSegments.map((seg, i) =>
+            seg.type === 'text'
+              ? <MessageResponse key={`t-${i}`}>{seg.content}</MessageResponse>
+              : <WidgetRenderer key={`w-${i}`} widgetCode={seg.data.widget_code} isStreaming={false} title={seg.data.title} />
+          )}
+        </>
+      );
+    }
+
+    // Try batch-plan (Image Agent batch mode)
     const batchPlanResult = parseBatchPlan(displayText);
     if (batchPlanResult) {
       return (
@@ -538,6 +695,7 @@ const AssistantContent = memo(function AssistantContent({ displayText, messageId
       .replace(/```image-gen-request[\s\S]*?```/g, '')
       .replace(/```image-gen-result[\s\S]*?```/g, '')
       .replace(/```batch-plan[\s\S]*?```/g, '')
+      .replace(/```show-widget[\s\S]*?(```|$)/g, '')
       .trim();
     return stripped ? <MessageResponse>{stripped}</MessageResponse> : null;
   }, [displayText, messageId, sessionId]);
