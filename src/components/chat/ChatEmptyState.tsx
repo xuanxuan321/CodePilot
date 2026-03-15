@@ -1,13 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { FolderOpen } from '@/components/ui/icon';
+import { FolderOpen, Plus } from '@/components/ui/icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface ChatEmptyStateProps {
   hasDirectory: boolean;
   hasProvider: boolean;
   onSelectFolder: () => void;
+  onNewChat?: () => void;
   recentProjects?: string[];
   onSelectProject?: (path: string) => void;
 }
@@ -16,12 +17,24 @@ export function ChatEmptyState({
   hasDirectory,
   hasProvider,
   onSelectFolder,
+  onNewChat,
   recentProjects,
   onSelectProject,
 }: ChatEmptyStateProps) {
   const { t } = useTranslation();
+  const showSome = process.env.NEXT_PUBLIC_SHOW_SOME !== 'false';
 
-  if (hasDirectory && hasProvider) {
+  if (hasDirectory && (hasProvider || !showSome)) {
+    if (!showSome && onNewChat) {
+      return (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <Button size="sm" className="gap-1.5" onClick={onNewChat}>
+            <Plus size={14} />
+            {t('chatList.newConversation')}
+          </Button>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-1 items-center justify-center p-8">
         <p className="text-sm text-muted-foreground">{t('chat.empty.ready')}</p>
@@ -66,7 +79,7 @@ export function ChatEmptyState({
           </div>
         )}
 
-        {!hasProvider && (
+        {!hasProvider && showSome && (
           <div className="space-y-2">
             <p className="text-sm font-medium">{t('chat.empty.noProvider')}</p>
             <Button
@@ -77,6 +90,13 @@ export function ChatEmptyState({
               {t('chat.empty.openSetup')}
             </Button>
           </div>
+        )}
+
+        {!hasProvider && !showSome && onNewChat && (
+          <Button size="sm" className="gap-1.5" onClick={onNewChat}>
+            <Plus size={14} />
+            {t('chatList.newConversation')}
+          </Button>
         )}
       </div>
     </div>

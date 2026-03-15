@@ -1,6 +1,7 @@
 export const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'sonnet': 200000,
   'opus': 200000,
+  'claude-opus-4-6[1m]': 1000000,
   'haiku': 200000,
   'claude-sonnet-4-20250514': 200000,
   'claude-opus-4-20250514': 200000,

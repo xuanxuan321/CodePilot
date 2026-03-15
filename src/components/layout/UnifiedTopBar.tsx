@@ -176,29 +176,31 @@ export function UnifiedTopBar() {
         >
           {isChatRoute && (
             <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={gitPanelOpen ? "secondary" : "ghost"}
-                    size="sm"
-                    className={`h-7 gap-1 px-1.5 ${gitPanelOpen ? "" : "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => setGitPanelOpen(!gitPanelOpen)}
-                  >
-                    <GitBranch size={16} />
-                    {currentBranch && (
-                      <span className="text-xs max-w-[100px] truncate">{currentBranch}</span>
-                    )}
-                    {gitDirtyCount > 0 && (
-                      <span className="flex items-center gap-0.5 text-[11px] text-amber-500">
-                        <DotOutline size={10} weight="fill" />
-                        {gitDirtyCount}
-                      </span>
-                    )}
-                    <span className="sr-only">{t('topBar.git')}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">{t('topBar.git')}</TooltipContent>
-              </Tooltip>
+              {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={gitPanelOpen ? "secondary" : "ghost"}
+                      size="sm"
+                      className={`h-7 gap-1 px-1.5 ${gitPanelOpen ? "" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setGitPanelOpen(!gitPanelOpen)}
+                    >
+                      <GitBranch size={16} />
+                      {currentBranch && (
+                        <span className="text-xs max-w-[100px] truncate">{currentBranch}</span>
+                      )}
+                      {gitDirtyCount > 0 && (
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-500">
+                          <DotOutline size={10} weight="fill" />
+                          {gitDirtyCount}
+                        </span>
+                      )}
+                      <span className="sr-only">{t('topBar.git')}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{t('topBar.git')}</TooltipContent>
+                </Tooltip>
+              )}
 
               <Tooltip>
                 <TooltipTrigger asChild>

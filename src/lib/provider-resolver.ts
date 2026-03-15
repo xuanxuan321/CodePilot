@@ -464,6 +464,7 @@ function buildResolution(
     const envModels: CatalogModel[] = [
       { modelId: 'sonnet', upstreamModelId: 'claude-sonnet-4-20250514', displayName: 'Sonnet 4.6' },
       { modelId: 'opus', upstreamModelId: 'claude-opus-4-20250514', displayName: 'Opus 4.6' },
+      { modelId: 'claude-opus-4-6[1m]', upstreamModelId: 'claude-opus-4-6[1m]', displayName: 'claude-opus-4-6[1m-c]' },
       { modelId: 'haiku', upstreamModelId: 'claude-haiku-4-5-20251001', displayName: 'Haiku 4.5' },
     ];
 

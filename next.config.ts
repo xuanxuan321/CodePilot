@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3', 'discord.js', '@discordjs/ws', 'zlib-sync'],
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_SHOW_SOME: process.env.NEXT_PUBLIC_SHOW_SOME ?? 'true',
   },
 };
 

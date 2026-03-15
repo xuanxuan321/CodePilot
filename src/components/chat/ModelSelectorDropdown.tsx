@@ -132,12 +132,14 @@ export function ModelSelectorDropdown({
               </div>
             )}
           </CommandListItems>
-          <CommandListFooter>
-            <CommandListFooterAction onClick={() => { setModelMenuOpen(false); setModelSearch(''); window.location.href = '/settings'; }}>
-              <Gear size={14} />
-              {t('composer.manageProviders' as TranslationKey)}
-            </CommandListFooterAction>
-          </CommandListFooter>
+          {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+            <CommandListFooter>
+              <CommandListFooterAction onClick={() => { setModelMenuOpen(false); setModelSearch(''); window.location.href = '/settings'; }}>
+                <Gear size={14} />
+                {t('composer.manageProviders' as TranslationKey)}
+              </CommandListFooterAction>
+            </CommandListFooter>
+          )}
         </CommandList>
       )}
     </div>

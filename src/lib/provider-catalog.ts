@@ -116,6 +116,7 @@ export interface VendorPreset {
 const ANTHROPIC_DEFAULT_MODELS: CatalogModel[] = [
   { modelId: 'sonnet', displayName: 'Sonnet 4.6', role: 'sonnet' },
   { modelId: 'opus', displayName: 'Opus 4.6', role: 'opus' },
+  { modelId: 'claude-opus-4-6[1m]', displayName: 'claude-opus-4-6[1m-c]', role: 'opus' },
   { modelId: 'haiku', displayName: 'Haiku 4.5', role: 'haiku' },
 ];
 

@@ -5,6 +5,7 @@ import type { ProviderModelGroup } from '@/types';
 export const DEFAULT_MODEL_OPTIONS = [
   { value: 'sonnet', label: 'Sonnet 4.6' },
   { value: 'opus', label: 'Opus 4.6' },
+  { value: 'claude-opus-4-6[1m]', label: 'claude-opus-4-6[1m-c]' },
   { value: 'haiku', label: 'Haiku 4.5' },
 ];
 

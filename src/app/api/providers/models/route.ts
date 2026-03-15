@@ -9,6 +9,7 @@ import type { ErrorResponse, ProviderModelGroup } from '@/types';
 const DEFAULT_MODELS = [
   { value: 'sonnet', label: 'Sonnet 4.6' },
   { value: 'opus', label: 'Opus 4.6' },
+  { value: 'claude-opus-4-6[1m]', label: 'claude-opus-4-6[1m-c]' },
   { value: 'haiku', label: 'Haiku 4.5' },
 ];
 
@@ -69,7 +70,7 @@ export async function GET() {
       const { getCachedModels } = await import('@/lib/agent-sdk-capabilities');
       const sdkModels = getCachedModels('env');
       if (sdkModels.length > 0) {
-        groups[0].models = sdkModels.map(m => {
+        const mapped: Array<Record<string, unknown> & { value: string; label: string }> = sdkModels.map(m => {
           const cw = getContextWindow(m.value);
           return {
             value: m.value,
@@ -81,6 +82,16 @@ export async function GET() {
             ...(cw != null ? { contextWindow: cw } : {}),
           };
         });
+        // Inject claude-opus-4-6[1m] if not already present from SDK
+        if (!mapped.some(m => m.value === 'claude-opus-4-6[1m]')) {
+          const cw = getContextWindow('claude-opus-4-6[1m]');
+          mapped.push({
+            value: 'claude-opus-4-6[1m]',
+            label: 'claude-opus-4-6[1m-c]',
+            ...(cw != null ? { contextWindow: cw } : {}),
+          });
+        }
+        groups[0].models = mapped;
       }
     } catch {
       // SDK capabilities not available, keep defaults

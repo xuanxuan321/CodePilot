@@ -416,13 +416,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <BatchImageGenContext.Provider value={batchImageGenValue}>
         <TooltipProvider delayDuration={300}>
           <div className="flex h-screen overflow-hidden">
-            <NavRail
-              chatListOpen={chatListOpen}
-              onToggleChatList={() => setChatListOpen(!chatListOpen)}
-              hasUpdate={updateContextValue.updateInfo?.updateAvailable ?? false}
-              readyToInstall={updateContextValue.updateInfo?.readyToInstall ?? false}
-              skipPermissionsActive={skipPermissionsActive}
-            />
+            {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+              <NavRail
+                chatListOpen={chatListOpen}
+                onToggleChatList={() => setChatListOpen(!chatListOpen)}
+                hasUpdate={updateContextValue.updateInfo?.updateAvailable ?? false}
+                readyToInstall={updateContextValue.updateInfo?.readyToInstall ?? false}
+                skipPermissionsActive={skipPermissionsActive}
+              />
+            )}
             <ErrorBoundary>
               <ChatListPanel open={chatListOpen} width={chatListWidth} />
             </ErrorBoundary>

@@ -437,22 +437,24 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
         onEffortChange={setSelectedEffort}
         sdkInitMeta={initMetaRef.current}
       />
-      <ChatComposerActionBar
-        left={<ImageGenToggle />}
-        center={
-          <ChatPermissionSelector
-            sessionId={sessionId}
-            permissionProfile={permissionProfile}
-            onPermissionChange={setPermissionProfile}
-          />
-        }
-        right={
-          <ContextUsageIndicator
-            messages={messages}
-            modelName={currentModel}
-          />
-        }
-      />
+      {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+        <ChatComposerActionBar
+          left={<ImageGenToggle />}
+          center={
+            <ChatPermissionSelector
+              sessionId={sessionId}
+              permissionProfile={permissionProfile}
+              onPermissionChange={setPermissionProfile}
+            />
+          }
+          right={
+            <ContextUsageIndicator
+              messages={messages}
+              modelName={currentModel}
+            />
+          }
+        />
+      )}
     </div>
   );
 }

@@ -392,17 +392,19 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
       </div>
 
       {/* Import CLI Session */}
-      <div className="px-3 pb-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setImportDialogOpen(true)}
-        >
-          <FileArrowDown size={12} />
-          {t('chatList.importFromCli')}
-        </Button>
-      </div>
+      {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+        <div className="px-3 pb-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setImportDialogOpen(true)}
+          >
+            <FileArrowDown size={12} />
+            {t('chatList.importFromCli')}
+          </Button>
+        </div>
+      )}
 
       {/* Session list grouped by project */}
       <ScrollArea className="flex-1 min-h-0 px-3">
@@ -497,11 +499,13 @@ export function ChatListPanel({ open, width }: ChatListPanelProps) {
       </ScrollArea>
 
       {/* Version */}
-      <div className="shrink-0 px-3 py-2 text-center">
-        <span className="text-[10px] text-muted-foreground/40">
-          v{process.env.NEXT_PUBLIC_APP_VERSION}
-        </span>
-      </div>
+      {process.env.NEXT_PUBLIC_SHOW_SOME !== 'false' && (
+        <div className="shrink-0 px-3 py-2 text-center">
+          <span className="text-[10px] text-muted-foreground/40">
+            v{process.env.NEXT_PUBLIC_APP_VERSION}
+          </span>
+        </div>
+      )}
 
       {/* Import CLI Session Dialog */}
       <ImportSessionDialog

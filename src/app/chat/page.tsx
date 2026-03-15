@@ -177,6 +177,25 @@ export default function NewChatPage() {
     localStorage.setItem('codepilot:last-working-directory', path);
   }, []);
 
+  const handleNewChat = useCallback(async () => {
+    const dir = workingDir || localStorage.getItem('codepilot:last-working-directory') || '';
+    if (!dir) return;
+    try {
+      const lastModel = localStorage.getItem('codepilot:last-model') || currentModel;
+      const lastProvider = localStorage.getItem('codepilot:last-provider-id') || currentProviderId || '';
+      const res = await fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ working_directory: dir, model: lastModel, provider_id: lastProvider }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/chat/${data.session.id}`);
+        window.dispatchEvent(new CustomEvent('session-created'));
+      }
+    } catch { /* ignore */ }
+  }, [workingDir, currentModel, currentProviderId, router]);
+
   const stopStreaming = useCallback(() => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
@@ -503,13 +522,18 @@ export default function NewChatPage() {
     }
   }, [sendFirstMessage]);
 
+  const showSome = process.env.NEXT_PUBLIC_SHOW_SOME !== 'false';
+  const showEmptyState = messages.length === 0 && !isStreaming && (!workingDir.trim() || !hasProvider);
+  const hideComposer = showEmptyState && !showSome && !hasProvider;
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {messages.length === 0 && !isStreaming && (!workingDir.trim() || !hasProvider) ? (
+      {showEmptyState ? (
         <ChatEmptyState
           hasDirectory={!!workingDir.trim()}
           hasProvider={hasProvider}
           onSelectFolder={handleSelectFolder}
+          onNewChat={handleNewChat}
           recentProjects={recentProjects}
           onSelectProject={handleSelectProject}
         />
@@ -525,49 +549,55 @@ export default function NewChatPage() {
           statusText={statusText}
         />
       )}
-      {errorBanner && (
-        <ErrorBanner
-          message={errorBanner.message}
-          description={errorBanner.description}
-          className="mx-4 mb-2"
-          onDismiss={() => setErrorBanner(null)}
-          actions={[
-            { label: t('error.retry'), onClick: () => setErrorBanner(null) },
-          ]}
-        />
-      )}
-      <PermissionPrompt
-        pendingPermission={pendingPermission}
-        permissionResolved={permissionResolved}
-        onPermissionResponse={handlePermissionResponse}
-        toolUses={toolUses}
-      />
-      <MessageInput
-        onSend={sendFirstMessage}
-        onCommand={handleCommand}
-        onStop={stopStreaming}
-        disabled={false}
-        isStreaming={isStreaming}
-        modelName={currentModel}
-        onModelChange={setCurrentModel}
-        providerId={currentProviderId}
-        onProviderModelChange={(pid, model) => {
-          setCurrentProviderId(pid);
-          setCurrentModel(model);
-        }}
-        workingDirectory={workingDir}
-        effort={selectedEffort}
-        onEffortChange={setSelectedEffort}
-      />
-      <ChatComposerActionBar
-        left={<ImageGenToggle />}
-        center={
-          <ChatPermissionSelector
-            permissionProfile={permissionProfile}
-            onPermissionChange={setPermissionProfile}
+      {!hideComposer && (
+        <>
+          {errorBanner && (
+            <ErrorBanner
+              message={errorBanner.message}
+              description={errorBanner.description}
+              className="mx-4 mb-2"
+              onDismiss={() => setErrorBanner(null)}
+              actions={[
+                { label: t('error.retry'), onClick: () => setErrorBanner(null) },
+              ]}
+            />
+          )}
+          <PermissionPrompt
+            pendingPermission={pendingPermission}
+            permissionResolved={permissionResolved}
+            onPermissionResponse={handlePermissionResponse}
+            toolUses={toolUses}
           />
-        }
-      />
+          <MessageInput
+            onSend={sendFirstMessage}
+            onCommand={handleCommand}
+            onStop={stopStreaming}
+            disabled={false}
+            isStreaming={isStreaming}
+            modelName={currentModel}
+            onModelChange={setCurrentModel}
+            providerId={currentProviderId}
+            onProviderModelChange={(pid, model) => {
+              setCurrentProviderId(pid);
+              setCurrentModel(model);
+            }}
+            workingDirectory={workingDir}
+            effort={selectedEffort}
+            onEffortChange={setSelectedEffort}
+          />
+          {showSome && (
+            <ChatComposerActionBar
+              left={<ImageGenToggle />}
+              center={
+                <ChatPermissionSelector
+                  permissionProfile={permissionProfile}
+                  onPermissionChange={setPermissionProfile}
+                />
+              }
+            />
+          )}
+        </>
+      )}
       <FolderPicker
         open={folderPickerOpen}
         onOpenChange={setFolderPickerOpen}
