@@ -249,10 +249,14 @@ export interface UpdateProviderRequest {
   sort_order?: number;
 }
 
-/** Per-provider options stored in options_json */
+/** Provider options stored in options_json (per-provider) or settings (global) */
 export interface ProviderOptions {
   thinking_mode?: 'adaptive' | 'enabled' | 'disabled';
   context_1m?: boolean;
+  /** Global default model ID — used for new sessions */
+  default_model?: string;
+  /** Global default model's provider ID — which provider the default model belongs to */
+  default_model_provider?: string;
 }
 
 export interface ProvidersResponse {

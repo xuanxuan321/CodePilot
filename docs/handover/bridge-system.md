@@ -234,7 +234,7 @@ Claude 的回复是 Markdown 格式，Telegram 仅支持有限 HTML 标签（b/i
 | bridge_auto_start | 服务启动时自动拉起桥接 |
 | bridge_default_work_dir | 新建会话默认工作目录 |
 | bridge_default_model | 新建会话默认模型 |
-| bridge_default_provider_id | 新建会话默认服务商 |
+| bridge_default_provider_id | 新建会话默认服务商（Bridge 系统独立设置，与全局默认模型的 `global_default_model_provider` 分离；Bridge 会话使用此值而非全局默认） |
 | telegram_bridge_allowed_users | 白名单用户 ID（逗号分隔） |
 | bridge_telegram_image_enabled | Telegram 图片接收开关（默认 true，设为 false 关闭） |
 | bridge_telegram_max_image_size | 图片大小上限（字节，默认 20MB） |

@@ -924,6 +924,9 @@ const en = {
   'settings.thinkingAdaptive': 'Adaptive',
   'settings.thinkingEnabled': 'Enabled',
   'settings.thinkingDisabled': 'Disabled',
+  'settings.defaultModel': 'Default Model',
+  'settings.defaultModelDesc': 'Only affects new conversations. Existing conversations keep their selected model.',
+  'settings.defaultModelAuto': 'Auto (first in list)',
 
   // ── SDK Capabilities: Account ─────────────────────────────
   'settings.accountInfo': 'Account Information',

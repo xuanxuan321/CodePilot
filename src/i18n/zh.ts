@@ -921,6 +921,9 @@ const zh: Record<TranslationKey, string> = {
   'settings.thinkingAdaptive': '自适应',
   'settings.thinkingEnabled': '启用',
   'settings.thinkingDisabled': '禁用',
+  'settings.defaultModel': '默认模型',
+  'settings.defaultModelDesc': '仅影响新对话，已有对话保持其已选模型不变',
+  'settings.defaultModelAuto': '自动（列表中第一个）',
 
   // ── SDK Capabilities: Account ─────────────────────────────
   'settings.accountInfo': '账户信息',

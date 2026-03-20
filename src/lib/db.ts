@@ -804,11 +804,22 @@ export function updateSessionProviderId(id: string, providerId: string): void {
 }
 
 export function getDefaultProviderId(): string | undefined {
+  // Primary source: derived from global default model's provider
+  const globalProvider = getSetting('global_default_model_provider');
+  if (globalProvider) return globalProvider;
+  // Legacy fallback: old default_provider_id setting (for migration)
   return getSetting('default_provider_id') || undefined;
 }
 
 export function setDefaultProviderId(id: string): void {
+  // Write legacy setting
   setSetting('default_provider_id', id);
+  // Also write the primary key so getDefaultProviderId() sees the change.
+  // Clear global_default_model at the same time — the old model belonged to
+  // the previous provider and is no longer valid. The UI will fall back to
+  // the provider's first model until the user picks a new default.
+  setSetting('global_default_model_provider', id);
+  setSetting('global_default_model', '');
 }
 
 export function updateSessionWorkingDirectory(id: string, workingDirectory: string): void {
@@ -1157,10 +1168,21 @@ export function deleteProvider(id: string): boolean {
  * For DB providers, reads from options_json column.
  */
 export function getProviderOptions(providerId: string): import('@/types').ProviderOptions {
+  if (providerId === '__global__') {
+    const defaultModel = getSetting('global_default_model') || undefined;
+    const defaultModelProvider = getSetting('global_default_model_provider') || undefined;
+    return {
+      ...(defaultModel ? { default_model: defaultModel } : {}),
+      ...(defaultModelProvider ? { default_model_provider: defaultModelProvider } : {}),
+    };
+  }
   if (providerId === 'env') {
     const thinkingMode = getSetting('thinking_mode') || 'adaptive';
     const context1m = getSetting('context_1m') === 'true';
-    return { thinking_mode: thinkingMode as 'adaptive' | 'enabled' | 'disabled', context_1m: context1m };
+    return {
+      thinking_mode: thinkingMode as 'adaptive' | 'enabled' | 'disabled',
+      context_1m: context1m,
+    };
   }
   const provider = getProvider(providerId);
   if (!provider) return {};
@@ -1174,6 +1196,15 @@ export function getProviderOptions(providerId: string): import('@/types').Provid
  * For DB providers, writes to options_json column.
  */
 export function setProviderOptions(providerId: string, options: import('@/types').ProviderOptions): void {
+  if (providerId === '__global__') {
+    if (options.default_model !== undefined) setSetting('global_default_model', options.default_model);
+    if (options.default_model_provider !== undefined) setSetting('global_default_model_provider', options.default_model_provider);
+    // Sync legacy default_provider_id so backend consumers (doctor, repair, etc.) stay consistent
+    if ((options as Record<string, unknown>).legacy_default_provider_id !== undefined) {
+      setSetting('default_provider_id', (options as Record<string, unknown>).legacy_default_provider_id as string);
+    }
+    return;
+  }
   if (providerId === 'env') {
     if (options.thinking_mode !== undefined) setSetting('thinking_mode', options.thinking_mode);
     if (options.context_1m !== undefined) setSetting('context_1m', options.context_1m ? 'true' : '');
